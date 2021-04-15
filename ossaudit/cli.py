@@ -12,6 +12,11 @@ import texttable
 from . import audit, cache, option, packages
 
 
+def validate_threshold(threshold: float):
+    if 0 <= threshold <= 10 or threshold == -1:
+        return threshold
+    raise click.BadParameter("CVSS score can only be from 0 to 10")
+
 @click.command()
 @option.add_config(
     "--config",
@@ -67,6 +72,13 @@ from . import audit, cache, option, packages
     is_flag=True,
     help="Remove existing cache.",
 )
+@option.add(
+    "--threshold",
+    type=int,
+    default=-1,
+    callback=validate_threshold,
+    help="Failure threshold.",
+)
 def cli(
         installed: bool,
         files: List[IO[str]],
@@ -76,6 +88,7 @@ def cli(
         ignore_ids: Tuple[str],
         ignore_cache: bool,
         reset_cache: bool,
+        threshold: float
 ) -> None:
     if reset_cache:
         cache.reset()
@@ -105,5 +118,10 @@ def cli(
         click.echo(table.draw())
 
     vlen, plen = len(vulns), len(pkgs)
-    click.echo("Found {} vulnerabilities in {} packages".format(vlen, plen))
-    sys.exit(vlen != 0)
+    if threshold >= 0:
+        tlen = len([v for v in vulns if int(v.cvss_score) >= threshold])
+        click.echo("Found {} vulnerabilities in {} packages, {} above {}".format(vlen, plen, tlen, threshold))
+        sys.exit(tlen != 0)
+    else:
+        click.echo("Found {} vulnerabilities in {} packages".format(vlen, plen))
+        sys.exit(vlen != 0)

@@ -195,3 +195,23 @@ class TestCli(PatchedTestCase):
             result = runner.invoke(cli.cli, ["--reset-cache"])
             self.assertEqual(result.exit_code, 0)
         self.assertFalse(cache.exists())
+
+    def test_below_threshold(self) -> None:
+        with patch("ossaudit.packages.get_installed"):
+            with patch("ossaudit.audit.components") as components:
+                components.return_value = [Vulnerability(cvss_score="5")]
+                runner = CliRunner()
+                result = runner.invoke(cli.cli, ["--installed", "--threshold", "9"])
+                self.assertEqual(result.exit_code, 0)
+                self.assertTrue("1 vulnerabilities" in result.output)
+                self.assertTrue("0 above threshold" in result.output)
+
+    def test_above_threshold(self) -> None:
+        with patch("ossaudit.packages.get_installed"):
+            with patch("ossaudit.audit.components") as components:
+                components.return_value = [Vulnerability(cvss_score="5")]
+                runner = CliRunner()
+                result = runner.invoke(cli.cli, ["--installed", "--threshold", "4"])
+                self.assertNotEqual(result.exit_code, 0)
+                self.assertTrue("1 vulnerabilities" in result.output)
+                self.assertTrue(", 1 above" in result.output)
