@@ -12,7 +12,7 @@ import texttable
 from . import audit, cache, option, packages
 
 
-def validate_threshold(threshold: float):
+def validate_threshold(threshold: int):
     if 0 <= threshold <= 10:
         return threshold
     raise click.BadParameter("CVSS score can only be from 0 to 10")
