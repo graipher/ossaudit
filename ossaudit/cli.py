@@ -88,7 +88,7 @@ def cli(
         ignore_ids: Tuple[str],
         ignore_cache: bool,
         reset_cache: bool,
-        threshold: float
+        threshold: int
 ) -> None:
     if reset_cache:
         cache.reset()
